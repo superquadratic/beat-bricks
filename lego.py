@@ -7,6 +7,9 @@ MAIN_WINDOW = 'hello'
 CELL_SIZE = 32
 GRID_SIZE = 16 * CELL_SIZE
 
+def is_note_color(color):
+    return color[0] > 160 or color[2] > 160
+
 class PatternCreator(object):
     def __init__(self, num_channels, num_steps):
         self.pattern = np.empty((num_channels, num_steps), np.bool)
@@ -16,7 +19,7 @@ class PatternCreator(object):
             for step in range(self.pattern.shape[1]):
                 cell = self.get_cell(img, channel, step)
                 average_color = np.average(np.average(cell, axis=0), axis=0)
-                self.pattern[channel][step] = self.is_note_set(average_color)
+                self.pattern[channel][step] = is_note_color(average_color)
 
     def cell_start_end(self, id):
         start = id * CELL_SIZE + CELL_SIZE / 4
@@ -30,9 +33,6 @@ class PatternCreator(object):
           channel_start : channel_end,
           step_start : step_end,
           :]
-
-    def is_note_set(self, color):
-        return color[0] > 160 or color[2] > 160
 
     def print_pattern(self):
         for channel in self.pattern:
