@@ -8,34 +8,41 @@ CELL_SIZE = 32
 GRID_SIZE = 16 * CELL_SIZE
 
 class PatternCreator(object):
-    def __init__(self, frame, homography):
-        self.img = cv2.warpPerspective(frame, homography, (GRID_SIZE, GRID_SIZE))
-        cv2.imshow(MAIN_WINDOW, self.img)
+    def __init__(self, num_channels, num_steps):
+        self.pattern = np.empty((num_channels, num_steps), np.bool)
 
-    def pattern(self, num_channels, num_steps):
-        pattern = np.empty((num_channels, num_steps), np.bool)
-        for channel in range(num_channels):
-            for step in range(num_steps):
-                cell = self.get_cell(channel, step)
+    def update_pattern(self, img):
+        for channel in range(self.pattern.shape[0]):
+            for step in range(self.pattern.shape[1]):
+                cell = self.get_cell(img, channel, step)
                 average_color = np.average(np.average(cell, axis=0), axis=0)
-                pattern[channel][step] = self.is_note_set(average_color)
-        return pattern
+                self.pattern[channel][step] = self.is_note_set(average_color)
 
     def cell_start_end(self, id):
         start = id * CELL_SIZE + CELL_SIZE / 4
         end = start + CELL_SIZE / 2
         return start, end
 
-    def get_cell(self, channel, step):
+    def get_cell(self, img, channel, step):
         channel_start, channel_end = self.cell_start_end(channel)
         step_start, step_end = self.cell_start_end(step)
-        return self.img[
+        return img[
           channel_start : channel_end,
           step_start : step_end,
           :]
 
     def is_note_set(self, color):
         return color[0] > 160 or color[2] > 160
+
+    def print_pattern(self):
+        for channel in self.pattern:
+            for step in channel:
+                if step:
+                    print '*',
+                else:
+                    print ' ',
+            print
+        print
 
 def global_on_mouse(event, x, y, unknown, lego_player):
     lego_player.on_mouse(event, x, y)
@@ -50,7 +57,8 @@ class LegoPlayer(object):
         cv2.setMouseCallback(MAIN_WINDOW, global_on_mouse, self)
         self.capture = cv2.VideoCapture(0)
 
-        self.pattern_player = PatternPlayer([], 120)
+        self.pattern_creator = PatternCreator(4, 16)
+        self.pattern_player = PatternPlayer(self.pattern_creator.pattern, 120)
 
     def on_mouse(self, event, x, y):
         if event == cv2.EVENT_LBUTTONDOWN:
@@ -72,25 +80,18 @@ class LegoPlayer(object):
         dst_points[3][1] = GRID_SIZE
         self.homography = cv2.findHomography(src_points, dst_points)[0]
 
-    def print_pattern(self, pattern):
-        for channel in pattern:
-            for step in channel:
-                if step:
-                    print '*',
-                else:
-                    print ' ',
-            print
-        print
-
     def loop(self):
         while True:
-            success, img = self.capture.read()
+            success, frame = self.capture.read()
             if success:
                 if self.homography is None:
-                    cv2.imshow(MAIN_WINDOW, img)
+                    cv2.imshow(MAIN_WINDOW, frame)
                 else:
-                    pattern_creator = PatternCreator(img, self.homography)
-                    self.pattern_player.pattern = pattern_creator.pattern(4, 16)
+                    warped = cv2.warpPerspective(frame, self.homography, (GRID_SIZE, GRID_SIZE))
+                    cv2.imshow(MAIN_WINDOW, warped)
+                    self.pattern_creator.update_pattern(warped)
+                    self.pattern_creator.print_pattern()
+                    self.pattern_player.pattern = self.pattern_creator.pattern
             if cv2.waitKey(100) != -1:
                 self.pattern_player.stop()
                 break
