@@ -6,19 +6,24 @@ RECT_WINDOW = 'rect'
 CELL_WINDOW = 'cell'
 CELL_SIZE = 32
 GRID_SIZE = 16 * CELL_SIZE
+CHANNELS = 4
+STEPS = 16
 
 class Frame(object):
     def __init__(self, img, homography):
+        self.pattern = np.zeros((CHANNELS, STEPS), np.bool)
         self.warped = cv2.warpPerspective(img, homography, (GRID_SIZE, GRID_SIZE))
         cv2.namedWindow(RECT_WINDOW)
         cv2.namedWindow(CELL_WINDOW)
         cv2.imshow(RECT_WINDOW, self.warped)
 
     def process(self):
-        cell = self.get_cell(0, 4)
-        cv2.imshow(CELL_WINDOW, cell)
-        average_color = np.average(np.average(cell, axis=0), axis=0)
-        print self.is_note_set(average_color)
+        for channel in range(CHANNELS):
+            for step in range(STEPS):
+                cell = self.get_cell(channel, step)
+                average_color = np.average(np.average(cell, axis=0), axis=0)
+                self.pattern[channel][step] = self.is_note_set(average_color)
+        print self.pattern
 
     def cell_start_end(self, id):
         start = id * CELL_SIZE + CELL_SIZE / 4
