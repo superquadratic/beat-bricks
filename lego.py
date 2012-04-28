@@ -8,6 +8,7 @@ def global_on_mouse(event, x, y, unknown, lego_player):
 
 class LegoPlayer(object):
     def __init__(self):
+        self.homography = None
         self.rect = np.empty((4, 2))
         self.rect_index = -1
 
@@ -33,9 +34,11 @@ class LegoPlayer(object):
         dst_points[1][0] = 512
         dst_points[2] = [512, 512]
         dst_points[3][1] = 512
-        print cv2.findHomography(src_points, dst_points)
+        self.homography = cv2.findHomography(src_points, dst_points)[0]
 
     def process_frame(self, frame):
+        if self.homography is not None:
+            return cv2.warpPerspective(frame, self.homography, (512, 512))
         return cv2.split(frame)[2]
 
     def loop(self):
