@@ -1,6 +1,8 @@
 import numpy as np
 import cv2
 
+from midi import PatternPlayer
+
 MAIN_WINDOW = 'hello'
 RECT_WINDOW = 'rect'
 CELL_SIZE = 32
@@ -50,6 +52,8 @@ class LegoPlayer(object):
         cv2.setMouseCallback(MAIN_WINDOW, global_on_mouse, self)
         self.capture = cv2.VideoCapture(0)
 
+        self.pattern_player = PatternPlayer([], 120)
+
     def on_mouse(self, event, x, y):
         if event == cv2.EVENT_LBUTTONDOWN:
             if self.has_roi():
@@ -87,9 +91,12 @@ class LegoPlayer(object):
                 cv2.imshow(MAIN_WINDOW, img)
                 if self.homography is not None:
                     pattern_creator = PatternCreator(img, self.homography)
-                    pattern = pattern_creator.pattern(4, 16)
-                    self.print_pattern(pattern)
-            cv2.waitKey(10)
+                    self.pattern_player.pattern = pattern_creator.pattern(4, 16)
+                    #self.print_pattern(pattern)
+            if cv2.waitKey(10) != -1:
+                self.pattern_player.running = False
+                break
+
 
 if __name__ == '__main__':
     lego_player = LegoPlayer()
