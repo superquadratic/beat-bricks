@@ -3,27 +3,33 @@ import cv2
 
 MAIN_WINDOW = 'hello'
 RECT_WINDOW = 'rect'
+CELL_WINDOW = 'cell'
 CELL_SIZE = 32
 GRID_SIZE = 16 * CELL_SIZE
 
 class Frame(object):
     def __init__(self, img, homography):
-        self.img = img
-        self.homography = homography
+        self.warped = cv2.warpPerspective(img, homography, (GRID_SIZE, GRID_SIZE))
         cv2.namedWindow(RECT_WINDOW)
+        cv2.namedWindow(CELL_WINDOW)
+        cv2.imshow(RECT_WINDOW, self.warped)
 
     def process(self):
-        warped = cv2.warpPerspective(self.img, self.homography, (GRID_SIZE, GRID_SIZE))
-        cv2.imshow(RECT_WINDOW, warped)
-        #cell = self.get_cell(warped, 0, 0)
-        #cv2.imshow(RECT_WINDOW, cell)
+        cell = self.get_cell(0, 4)
+        cv2.imshow(CELL_WINDOW, cell)
 
-    def get_cell(self, warped, channel, step):
-        cell = warped[
-          channel * CELL_SIZE : (channel + 1) * CELL_SIZE,
-          step * CELL_SIZE : (step + 1) * CELL_SIZE,
+    def cell_start_end(self, id):
+        start = id * CELL_SIZE + CELL_SIZE / 4
+        end = start + CELL_SIZE / 2
+        return start, end
+
+    def get_cell(self, channel, step):
+        channel_start, channel_end = self.cell_start_end(channel)
+        step_start, step_end = self.cell_start_end(step)
+        return self.warped[
+          channel_start : channel_end,
+          step_start : step_end,
           :]
-        print cell
 
 def global_on_mouse(event, x, y, unknown, lego_player):
     lego_player.on_mouse(event, x, y)
