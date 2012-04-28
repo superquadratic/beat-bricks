@@ -8,7 +8,14 @@ CELL_SIZE = 32
 GRID_SIZE = 16 * CELL_SIZE
 
 def is_note_color(color):
-    return color[0] > 160 or color[2] > 160
+    b, g, r = color
+    return ((r < 100 and g < 200 and b > 150) # blue brick
+         or (r > 200 and g < 100 and b < 100) # red brick
+         or (r > 200 and g > 150 and b < 150)) # yellow brick
+
+def is_clear_color(color):
+    b, g, r = color
+    return r < 100 and g > 100 and b < 150
 
 class PatternCreator(object):
     def __init__(self, num_channels, num_steps):
@@ -19,7 +26,10 @@ class PatternCreator(object):
             for step in range(self.pattern.shape[1]):
                 cell = self.get_cell(img, channel, step)
                 average_color = np.average(np.average(cell, axis=0), axis=0)
-                self.pattern[channel][step] = is_note_color(average_color)
+                if is_clear_color(average_color):
+                    self.pattern[channel][step] = False
+                elif is_note_color(average_color):
+                    self.pattern[channel][step] = True
 
     def cell_start_end(self, id):
         start = id * CELL_SIZE + CELL_SIZE / 4
