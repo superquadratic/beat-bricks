@@ -6,8 +6,6 @@ RECT_WINDOW = 'rect'
 CELL_WINDOW = 'cell'
 CELL_SIZE = 32
 GRID_SIZE = 16 * CELL_SIZE
-CHANNELS = 4
-STEPS = 16
 
 class PatternCreator(object):
     def __init__(self, frame, homography):
@@ -16,10 +14,10 @@ class PatternCreator(object):
         cv2.namedWindow(CELL_WINDOW)
         cv2.imshow(RECT_WINDOW, self.img)
 
-    def pattern(self):
-        pattern = np.empty((CHANNELS, STEPS), np.bool)
-        for channel in range(CHANNELS):
-            for step in range(STEPS):
+    def pattern(self, num_channels, num_steps):
+        pattern = np.empty((num_channels, num_steps), np.bool)
+        for channel in range(num_channels):
+            for step in range(num_steps):
                 cell = self.get_cell(channel, step)
                 average_color = np.average(np.average(cell, axis=0), axis=0)
                 pattern[channel][step] = self.is_note_set(average_color)
@@ -39,7 +37,7 @@ class PatternCreator(object):
           :]
 
     def is_note_set(self, color):
-        return color[0] > 128 or color[2] > 128
+        return color[0] > 160 or color[2] > 160
 
 def global_on_mouse(event, x, y, unknown, lego_player):
     lego_player.on_mouse(event, x, y)
@@ -74,6 +72,16 @@ class LegoPlayer(object):
         dst_points[3][1] = GRID_SIZE
         self.homography = cv2.findHomography(src_points, dst_points)[0]
 
+    def print_pattern(self, pattern):
+        for channel in pattern:
+            for step in channel:
+                if step:
+                    print '*',
+                else:
+                    print ' ',
+            print
+        print
+
     def loop(self):
         while True:
             success, img = self.capture.read()
@@ -81,7 +89,8 @@ class LegoPlayer(object):
                 cv2.imshow(MAIN_WINDOW, img)
                 if self.homography is not None:
                     pattern_creator = PatternCreator(img, self.homography)
-                    print pattern_creator.pattern()
+                    pattern = pattern_creator.pattern(4, 16)
+                    self.print_pattern(pattern)
             cv2.waitKey(10)
 
 if __name__ == '__main__':
