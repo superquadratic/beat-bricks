@@ -9,21 +9,21 @@ GRID_SIZE = 16 * CELL_SIZE
 CHANNELS = 4
 STEPS = 16
 
-class Frame(object):
-    def __init__(self, img, homography):
-        self.pattern = np.zeros((CHANNELS, STEPS), np.bool)
-        self.warped = cv2.warpPerspective(img, homography, (GRID_SIZE, GRID_SIZE))
+class PatternCreator(object):
+    def __init__(self, frame, homography):
+        self.img = cv2.warpPerspective(frame, homography, (GRID_SIZE, GRID_SIZE))
         cv2.namedWindow(RECT_WINDOW)
         cv2.namedWindow(CELL_WINDOW)
-        cv2.imshow(RECT_WINDOW, self.warped)
+        cv2.imshow(RECT_WINDOW, self.img)
 
-    def process(self):
+    def pattern(self):
+        pattern = np.empty((CHANNELS, STEPS), np.bool)
         for channel in range(CHANNELS):
             for step in range(STEPS):
                 cell = self.get_cell(channel, step)
                 average_color = np.average(np.average(cell, axis=0), axis=0)
-                self.pattern[channel][step] = self.is_note_set(average_color)
-        print self.pattern
+                pattern[channel][step] = self.is_note_set(average_color)
+        return pattern
 
     def cell_start_end(self, id):
         start = id * CELL_SIZE + CELL_SIZE / 4
@@ -33,7 +33,7 @@ class Frame(object):
     def get_cell(self, channel, step):
         channel_start, channel_end = self.cell_start_end(channel)
         step_start, step_end = self.cell_start_end(step)
-        return self.warped[
+        return self.img[
           channel_start : channel_end,
           step_start : step_end,
           :]
@@ -80,8 +80,8 @@ class LegoPlayer(object):
             if success:
                 cv2.imshow(MAIN_WINDOW, img)
                 if self.homography is not None:
-                    frame = Frame(img, self.homography)
-                    frame.process()
+                    pattern_creator = PatternCreator(img, self.homography)
+                    print pattern_creator.pattern()
             cv2.waitKey(10)
 
 if __name__ == '__main__':
