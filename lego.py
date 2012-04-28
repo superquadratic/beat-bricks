@@ -17,6 +17,8 @@ class Frame(object):
     def process(self):
         cell = self.get_cell(0, 4)
         cv2.imshow(CELL_WINDOW, cell)
+        average_color = np.average(np.average(cell, axis=0), axis=0)
+        print self.is_note_set(average_color)
 
     def cell_start_end(self, id):
         start = id * CELL_SIZE + CELL_SIZE / 4
@@ -30,6 +32,9 @@ class Frame(object):
           channel_start : channel_end,
           step_start : step_end,
           :]
+
+    def is_note_set(self, color):
+        return color[0] > 128 or color[2] > 128
 
 def global_on_mouse(event, x, y, unknown, lego_player):
     lego_player.on_mouse(event, x, y)
