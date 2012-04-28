@@ -4,15 +4,13 @@ import cv2
 from midi import PatternPlayer
 
 MAIN_WINDOW = 'hello'
-RECT_WINDOW = 'rect'
 CELL_SIZE = 32
 GRID_SIZE = 16 * CELL_SIZE
 
 class PatternCreator(object):
     def __init__(self, frame, homography):
         self.img = cv2.warpPerspective(frame, homography, (GRID_SIZE, GRID_SIZE))
-        cv2.namedWindow(RECT_WINDOW)
-        cv2.imshow(RECT_WINDOW, self.img)
+        cv2.imshow(MAIN_WINDOW, self.img)
 
     def pattern(self, num_channels, num_steps):
         pattern = np.empty((num_channels, num_steps), np.bool)
@@ -88,13 +86,13 @@ class LegoPlayer(object):
         while True:
             success, img = self.capture.read()
             if success:
-                cv2.imshow(MAIN_WINDOW, img)
-                if self.homography is not None:
+                if self.homography is None:
+                    cv2.imshow(MAIN_WINDOW, img)
+                else:
                     pattern_creator = PatternCreator(img, self.homography)
                     self.pattern_player.pattern = pattern_creator.pattern(4, 16)
-                    #self.print_pattern(pattern)
-            if cv2.waitKey(10) != -1:
-                self.pattern_player.running = False
+            if cv2.waitKey(100) != -1:
+                self.pattern_player.stop()
                 break
 
 

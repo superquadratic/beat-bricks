@@ -12,17 +12,16 @@ class PatternPlayer(threading.Thread):
         self.pattern = pattern
         self.start()
 
-    def run(self):
-        self.running = True
-        start_time = time.time()
-        last_step = -1
+    def stop(self):
+        self.event.set()
 
-        while self.running:
-            delta_time = time.time() - start_time
-            current_step = int(delta_time / self.step_time) % 16
-            if current_step != last_step:
-                last_step = current_step
-                self.trigger_step(current_step)
+    def run(self):
+        self.event = threading.Event()
+        step = -1
+        while not self.event.is_set():
+            step = (step + 1) % 16
+            self.trigger_step(step)
+            self.event.wait(self.step_time)
 
     def trigger_step(self, step):
         note = 36
@@ -31,11 +30,3 @@ class PatternPlayer(threading.Thread):
                 self.out.send_message([0x90, note, 100])
                 self.out.send_message([0x80, note, 100])
             note += 1
-
-if __name__ == '__main__':
-    player = PatternPlayer(120)
-    try:
-        while True:
-            pass
-    except:
-        player.running = False
