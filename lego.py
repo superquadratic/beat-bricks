@@ -3,7 +3,6 @@ import cv2
 
 MAIN_WINDOW = 'hello'
 RECT_WINDOW = 'rect'
-CELL_WINDOW = 'cell'
 CELL_SIZE = 32
 GRID_SIZE = 16 * CELL_SIZE
 
@@ -11,7 +10,6 @@ class PatternCreator(object):
     def __init__(self, frame, homography):
         self.img = cv2.warpPerspective(frame, homography, (GRID_SIZE, GRID_SIZE))
         cv2.namedWindow(RECT_WINDOW)
-        cv2.namedWindow(CELL_WINDOW)
         cv2.imshow(RECT_WINDOW, self.img)
 
     def pattern(self, num_channels, num_steps):
