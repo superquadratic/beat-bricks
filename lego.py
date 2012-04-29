@@ -67,7 +67,7 @@ class LegoPlayer(object):
         cv2.setMouseCallback(MAIN_WINDOW, global_on_mouse, self)
         self.capture = cv2.VideoCapture(0)
 
-        self.pattern_creator = PatternCreator(4, 16)
+        self.pattern_creator = PatternCreator(8, 16)
         self.pattern_player = PatternPlayer(self.pattern_creator.pattern, 120)
 
     def on_mouse(self, event, x, y):
