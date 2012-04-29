@@ -31,11 +31,16 @@ def is_clear_color(color):
     b, g, r = color
     return r < 100 and g > 0 and b < 150
 
-class PatternCreator(object):
+class Pattern(object):
     def __init__(self, num_channels, num_steps):
         self.pattern = np.empty((num_channels, num_steps), np.bool)
+        self.muted = np.zeros((num_channels), np.bool)
 
-    def update_pattern(self, img):
+    def update_from_image(self, img):
+        self.update_notes(img)
+        self.set_muted_channels(img)
+
+    def update_notes(self, img):
         for channel in range(self.pattern.shape[0]):
             for step in range(self.pattern.shape[1]):
                 color = average_cell_color(img, channel, step)
@@ -44,8 +49,17 @@ class PatternCreator(object):
                 elif is_note_color(color):
                     self.pattern[channel][step] = True
 
-    def print_pattern(self):
-        for channel in self.pattern:
+    def set_muted_channels(self, img):
+        for channel in range(self.muted.size):
+            color = average_cell_color(img, channel + 8, 0)
+            self.muted[channel] = not is_clear_color(color)
+
+    def print_(self):
+        for channel_id, channel in enumerate(self.pattern):
+            if self.muted[channel_id]:
+                print '#:',
+            else:
+                print str(channel_id) + ':',
             for step in channel:
                 if step:
                     print '*',
@@ -67,8 +81,8 @@ class LegoPlayer(object):
         cv2.setMouseCallback(MAIN_WINDOW, global_on_mouse, self)
         self.capture = cv2.VideoCapture(0)
 
-        self.pattern_creator = PatternCreator(8, 16)
-        self.pattern_player = PatternPlayer(self.pattern_creator.pattern, 120)
+        self.pattern = Pattern(8, 16)
+        self.pattern_player = PatternPlayer(self.pattern, 120)
 
     def on_mouse(self, event, x, y):
         if event == cv2.EVENT_LBUTTONDOWN:
@@ -99,9 +113,8 @@ class LegoPlayer(object):
                 else:
                     warped = cv2.warpPerspective(frame, self.homography, (GRID_SIZE, GRID_SIZE))
                     cv2.imshow(MAIN_WINDOW, warped)
-                    self.pattern_creator.update_pattern(warped)
-                    self.pattern_creator.print_pattern()
-                    self.pattern_player.pattern = self.pattern_creator.pattern
+                    self.pattern.update_from_image(warped)
+                    self.pattern.print_()
             if cv2.waitKey(100) != -1:
                 self.pattern_player.stop()
                 break

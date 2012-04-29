@@ -25,8 +25,8 @@ class PatternPlayer(threading.Thread):
 
     def trigger_step(self, step):
         note = 36
-        for channel in self.pattern:
-            if channel[step]:
+        for channel_id, channel in enumerate(self.pattern.pattern):
+            if channel[step] and not self.pattern.muted[channel_id]:
                 self.out.send_message([0x90, note, 100])
                 self.out.send_message([0x80, note, 100])
             note += 1
