@@ -1,5 +1,4 @@
 import threading
-import time
 
 import rtmidi_python as rtmidi
 
