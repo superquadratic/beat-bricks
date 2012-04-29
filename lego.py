@@ -7,6 +7,20 @@ MAIN_WINDOW = 'hello'
 CELL_SIZE = 16
 GRID_SIZE = 16 * CELL_SIZE
 
+def cell_start_end(id):
+    start = id * CELL_SIZE + CELL_SIZE / 4
+    end = start + CELL_SIZE / 2
+    return start, end
+
+def average_cell_color(img, y, x):
+    y_start, y_end = cell_start_end(y)
+    x_start, x_end = cell_start_end(x)
+    cell = img[
+      y_start : y_end,
+      x_start : x_end,
+      :]
+    return np.average(np.average(cell, axis=0), axis=0)
+
 def is_note_color(color):
     b, g, r = color
     return ((r < 100 and g < 200 and b > 150) # blue brick
@@ -24,25 +38,11 @@ class PatternCreator(object):
     def update_pattern(self, img):
         for channel in range(self.pattern.shape[0]):
             for step in range(self.pattern.shape[1]):
-                cell = self.get_cell(img, channel, step)
-                average_color = np.average(np.average(cell, axis=0), axis=0)
-                if is_clear_color(average_color):
+                color = average_cell_color(img, channel, step)
+                if is_clear_color(color):
                     self.pattern[channel][step] = False
-                elif is_note_color(average_color):
+                elif is_note_color(color):
                     self.pattern[channel][step] = True
-
-    def cell_start_end(self, id):
-        start = id * CELL_SIZE + CELL_SIZE / 4
-        end = start + CELL_SIZE / 2
-        return start, end
-
-    def get_cell(self, img, channel, step):
-        channel_start, channel_end = self.cell_start_end(channel)
-        step_start, step_end = self.cell_start_end(step)
-        return img[
-          channel_start : channel_end,
-          step_start : step_end,
-          :]
 
     def print_pattern(self):
         for channel in self.pattern:
