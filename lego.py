@@ -4,7 +4,7 @@ import cv2
 from midi import PatternPlayer
 
 MAIN_WINDOW = 'hello'
-CELL_SIZE = 32
+CELL_SIZE = 16
 GRID_SIZE = 16 * CELL_SIZE
 
 def is_note_color(color):
