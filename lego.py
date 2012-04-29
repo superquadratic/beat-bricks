@@ -10,12 +10,12 @@ GRID_SIZE = 16 * CELL_SIZE
 def is_note_color(color):
     b, g, r = color
     return ((r < 100 and g < 200 and b > 150) # blue brick
-         or (r > 200 and g < 100 and b < 100) # red brick
+         or (r > 150 and g < 100 and b < 100) # red brick
          or (r > 200 and g > 150 and b < 150)) # yellow brick
 
 def is_clear_color(color):
     b, g, r = color
-    return r < 100 and g > 100 and b < 150
+    return r < 100 and g > 0 and b < 150
 
 class PatternCreator(object):
     def __init__(self, num_channels, num_steps):
