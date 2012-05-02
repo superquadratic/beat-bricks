@@ -1,9 +1,11 @@
-import numpy as np
+import json
+
 import cv2
+import numpy
 
-from midi import PatternPlayer
+from pattern import SharedPattern
 
-MAIN_WINDOW = 'hello'
+WINDOW = 'beat it'
 CELL_SIZE = 16
 GRID_SIZE = 16 * CELL_SIZE
 
@@ -19,7 +21,7 @@ def average_cell_color(img, y, x):
       y_start : y_end,
       x_start : x_end,
       :]
-    return np.average(np.average(cell, axis=0), axis=0)
+    return numpy.average(numpy.average(cell, axis=0), axis=0)
 
 def is_note_color(color):
     b, g, r = color
@@ -31,95 +33,60 @@ def is_clear_color(color):
     b, g, r = color
     return r < 100 and g > 0 and b < 150
 
-class Pattern(object):
+class LegoPatternReader(object):
     def __init__(self, num_channels, num_steps):
-        self.pattern = np.empty((num_channels, num_steps), np.bool)
-        self.muted = np.zeros((num_channels), np.bool)
+        self.pattern = numpy.ones((num_channels, num_steps), numpy.bool)
+        self.muted = numpy.zeros((num_channels), numpy.bool)
 
-    def update_from_image(self, img):
-        self.update_notes(img)
-        self.set_muted_channels(img)
-
-    def update_notes(self, img):
-        for channel in range(self.pattern.shape[0]):
-            for step in range(self.pattern.shape[1]):
-                color = average_cell_color(img, channel, step)
-                if is_clear_color(color):
-                    self.pattern[channel][step] = False
-                elif is_note_color(color):
-                    self.pattern[channel][step] = True
-
-    def set_muted_channels(self, img):
-        for channel in range(self.muted.size):
-            color = average_cell_color(img, channel + 8, 0)
-            self.muted[channel] = not is_clear_color(color)
-
-    def print_(self):
-        for channel_id, channel in enumerate(self.pattern):
-            if self.muted[channel_id]:
-                print '#:',
-            else:
-                print str(channel_id) + ':',
-            for step in channel:
-                if step:
-                    print '*',
-                else:
-                    print ' ',
-            print
-        print
-
-def global_on_mouse(event, x, y, unknown, lego_player):
-    lego_player.on_mouse(event, x, y)
-
-class LegoPlayer(object):
+class LegoPatternDetector(object):
     def __init__(self):
-        self.homography = None
-        self.roi = np.empty((4, 2))
-        self.roi_index = -1
-
-        cv2.namedWindow(MAIN_WINDOW)
-        cv2.setMouseCallback(MAIN_WINDOW, global_on_mouse, self)
+        self.homography = self.compute_homography()
+        self.pattern = SharedPattern()
         self.capture = cv2.VideoCapture(0)
-
-        self.pattern = Pattern(8, 16)
-        self.pattern_player = PatternPlayer(self.pattern, 120)
-
-    def on_mouse(self, event, x, y):
-        if event == cv2.EVENT_LBUTTONDOWN:
-            if self.has_roi():
-                self.roi_index = -1
-            self.roi_index += 1
-            self.roi[self.roi_index] = [x, y]
-            if self.has_roi():
-                self.compute_homography()
-
-    def has_roi(self):
-        return self.roi_index == 3
+        cv2.namedWindow(WINDOW)
 
     def compute_homography(self):
-        src_points = self.roi
-        dst_points = np.zeros_like(src_points)
-        dst_points[1][0] = GRID_SIZE
-        dst_points[2] = [GRID_SIZE, GRID_SIZE]
-        dst_points[3][1] = GRID_SIZE
-        self.homography = cv2.findHomography(src_points, dst_points)[0]
+        src_points = json.load(open('rect.json'))
+        dst_points = [[        0,         0],
+                      [GRID_SIZE,         0],
+                      [GRID_SIZE, GRID_SIZE],
+                      [        0, GRID_SIZE]]
+        return cv2.findHomography(
+            numpy.asarray(src_points, float),
+            numpy.asarray(dst_points, float))[0]
 
-    def loop(self):
+    def process_image(self, img):
+        self.update_notes(img)
+        self.mute_channels(img)
+
+    def update_notes(self, img):
+        for channel in range(self.pattern.num_channels):
+            for step in range(self.pattern.num_steps):
+                color = average_cell_color(img, channel, step)
+                if is_clear_color(color):
+                    self.pattern.clear_step(channel, step)
+                elif is_note_color(color):
+                    self.pattern.set_step(channel, step)
+
+    def mute_channels(self, img):
+        for channel in range(self.pattern.num_channels):
+            color = average_cell_color(img, channel + 8, 0)
+            if is_clear_color(color):
+                self.pattern.unmute(channel)
+            else:
+                self.pattern.mute(channel)
+
+    def run(self):
         while True:
             success, frame = self.capture.read()
             if success:
-                if self.homography is None:
-                    cv2.imshow(MAIN_WINDOW, frame)
-                else:
-                    warped = cv2.warpPerspective(frame, self.homography, (GRID_SIZE, GRID_SIZE))
-                    cv2.imshow(MAIN_WINDOW, warped)
-                    self.pattern.update_from_image(warped)
-                    self.pattern.print_()
+                warped = cv2.warpPerspective(frame, self.homography, (GRID_SIZE, GRID_SIZE))
+                cv2.imshow(WINDOW, warped)
+                self.process_image(warped)
             if cv2.waitKey(100) != -1:
-                self.pattern_player.stop()
                 break
 
 
 if __name__ == '__main__':
-    lego_player = LegoPlayer()
-    lego_player.loop()
+    pattern_detector = LegoPatternDetector()
+    pattern_detector.run()

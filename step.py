@@ -1,10 +1,7 @@
 import numpy
 import pypm
 
-class Pattern(object):
-    def __init__(self, channels=4, steps=16):
-        self.steps = numpy.ones((steps, channels), bool)
-        self.muted = numpy.zeros(channels, bool)
+from pattern import Pattern, PatternListener
 
 class StepSequencer(object):
     def __init__(self, pattern=Pattern()):
@@ -37,5 +34,7 @@ class StepSequencer(object):
                 self.output.Write([[[0x80, 36 + channel], timestamp]])
 
 if __name__ == '__main__':
-    step = StepSequencer()
+    pattern_listener = PatternListener()
+    pattern_listener.start()
+    step = StepSequencer(pattern_listener.pattern)
     step.play()
