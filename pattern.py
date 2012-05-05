@@ -2,54 +2,54 @@ import liblo
 import numpy
 
 class Pattern(object):
-    def __init__(self, channels=8, steps=16):
-        self.steps = numpy.zeros((steps, channels), bool)
-        self.muted = numpy.zeros(channels, bool)
+    def __init__(self, tracks=8, steps=16):
+        self.steps = numpy.zeros((steps, tracks), bool)
+        self.muted = numpy.zeros(tracks, bool)
 
     @property
-    def num_channels(self):
+    def num_tracks(self):
         return self.steps.shape[1]
 
     @property
     def num_steps(self):
         return self.steps.shape[0]
 
-    def set_step(self, channel, step):
-        self.steps[step, channel] = True
+    def set_step(self, track, step):
+        self.steps[step, track] = True
 
-    def clear_step(self, channel, step):
-        self.steps[step, channel] = False
+    def clear_step(self, track, step):
+        self.steps[step, track] = False
 
-    def mute(self, channel):
-        self.muted[channel] = True
+    def mute(self, track):
+        self.muted[track] = True
 
-    def unmute(self, channel):
-        self.muted[channel] = False
+    def unmute(self, track):
+        self.muted[track] = False
 
 class SharedPattern(Pattern):
     def __init__(self, address=8765):
         Pattern.__init__(self)
         self.target = liblo.Address(address)
 
-    def set_step(self, channel, step):
-        if not self.steps[step, channel]:
-            liblo.send(self.target, '/pattern/set', channel, step)
-        Pattern.set_step(self, channel, step)
+    def set_step(self, track, step):
+        if not self.steps[step, track]:
+            liblo.send(self.target, '/pattern/set', track, step)
+        Pattern.set_step(self, track, step)
 
-    def clear_step(self, channel, step):
-        if self.steps[step, channel]:
-            liblo.send(self.target, '/pattern/clear', channel, step)
-        Pattern.clear_step(self, channel, step)
+    def clear_step(self, track, step):
+        if self.steps[step, track]:
+            liblo.send(self.target, '/pattern/clear', track, step)
+        Pattern.clear_step(self, track, step)
 
-    def mute(self, channel):
-        if not self.muted[channel]:
-            liblo.send(self.target, '/pattern/mute', channel)
-        Pattern.mute(self, channel)
+    def mute(self, track):
+        if not self.muted[track]:
+            liblo.send(self.target, '/pattern/mute', track)
+        Pattern.mute(self, track)
 
-    def unmute(self, channel):
-        if self.muted[channel]:
-            liblo.send(self.target, '/pattern/unmute', channel)
-        Pattern.unmute(self, channel)
+    def unmute(self, track):
+        if self.muted[track]:
+            liblo.send(self.target, '/pattern/unmute', track)
+        Pattern.unmute(self, track)
 
 class PatternListener(liblo.ServerThread):
     def __init__(self, address=8765):
@@ -58,18 +58,18 @@ class PatternListener(liblo.ServerThread):
 
     @liblo.make_method('/pattern/set', 'ii')
     def set_callback(self, path, args):
-        channel, step = args
-        self.pattern.set_step(channel, step)
+        track, step = args
+        self.pattern.set_step(track, step)
 
     @liblo.make_method('/pattern/clear', 'ii')
     def clear_callback(self, path, args):
-        channel, step = args
-        self.pattern.clear_step(channel, step)
+        track, step = args
+        self.pattern.clear_step(track, step)
 
     @liblo.make_method('/pattern/mute', 'i')
-    def mute_callback(self, path, channel):
-        self.pattern.mute(channel)
+    def mute_callback(self, path, track):
+        self.pattern.mute(track)
 
     @liblo.make_method('/pattern/unmute', 'i')
-    def unmute_callback(self, path, channel):
-        self.pattern.unmute(channel)
+    def unmute_callback(self, path, track):
+        self.pattern.unmute(track)

@@ -28,10 +28,10 @@ class StepSequencer(object):
                 self.trigger_step(step, next_time)
 
     def trigger_step(self, step, timestamp):
-        for channel, note_on in enumerate(self.pattern.steps[step]):
-            if note_on and not self.pattern.muted[channel]:
-                self.output.Write([[[0x90, 36 + channel, 100], timestamp]])
-                self.output.Write([[[0x80, 36 + channel], timestamp]])
+        for track, note_on in enumerate(self.pattern.steps[step]):
+            if note_on and not self.pattern.muted[track]:
+                self.output.Write([[[0x90, 36 + track, 100], timestamp]])
+                self.output.Write([[[0x80, 36 + track], timestamp]])
 
 if __name__ == '__main__':
     pattern_listener = PatternListener()

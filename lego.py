@@ -34,9 +34,9 @@ def is_clear_color(color):
     return r < 100 and g > 0 and b < 150
 
 class LegoPatternReader(object):
-    def __init__(self, num_channels, num_steps):
-        self.pattern = numpy.ones((num_channels, num_steps), numpy.bool)
-        self.muted = numpy.zeros((num_channels), numpy.bool)
+    def __init__(self, num_tracks, num_steps):
+        self.pattern = numpy.ones((num_tracks, num_steps), numpy.bool)
+        self.muted = numpy.zeros((num_tracks), numpy.bool)
 
 class LegoPatternDetector(object):
     def __init__(self):
@@ -57,24 +57,24 @@ class LegoPatternDetector(object):
 
     def process_image(self, img):
         self.update_notes(img)
-        self.mute_channels(img)
+        self.mute_tracks(img)
 
     def update_notes(self, img):
-        for channel in range(self.pattern.num_channels):
+        for track in range(self.pattern.num_tracks):
             for step in range(self.pattern.num_steps):
-                color = average_cell_color(img, channel, step)
+                color = average_cell_color(img, track, step)
                 if is_clear_color(color):
-                    self.pattern.clear_step(channel, step)
+                    self.pattern.clear_step(track, step)
                 elif is_note_color(color):
-                    self.pattern.set_step(channel, step)
+                    self.pattern.set_step(track, step)
 
-    def mute_channels(self, img):
-        for channel in range(self.pattern.num_channels):
-            color = average_cell_color(img, channel + 8, 0)
+    def mute_tracks(self, img):
+        for track in range(self.pattern.num_tracks):
+            color = average_cell_color(img, track + 8, 0)
             if is_clear_color(color):
-                self.pattern.unmute(channel)
+                self.pattern.unmute(track)
             else:
-                self.pattern.mute(channel)
+                self.pattern.mute(track)
 
     def run(self):
         while True:
