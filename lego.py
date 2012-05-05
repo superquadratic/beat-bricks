@@ -33,11 +33,6 @@ def is_clear_color(color):
     b, g, r = color
     return r < 100 and g > 0 and b < 150
 
-class LegoPatternReader(object):
-    def __init__(self, num_tracks, num_steps):
-        self.pattern = numpy.ones((num_tracks, num_steps), numpy.bool)
-        self.muted = numpy.zeros((num_tracks), numpy.bool)
-
 class LegoPatternDetector(object):
     def __init__(self):
         self.homography = self.compute_homography()
