@@ -14,24 +14,42 @@ def cell_start_end(id):
     end = start + CELL_SIZE / 2
     return start, end
 
-def average_cell_color(img, y, x):
+def average_cell_color_hsv(img, y, x):
     y_start, y_end = cell_start_end(y)
     x_start, x_end = cell_start_end(x)
     cell = img[
       y_start : y_end,
       x_start : x_end,
       :]
-    return numpy.average(numpy.average(cell, axis=0), axis=0)
+    return bgr2hsv(numpy.average(numpy.average(cell, axis=0), axis=0))
 
-def is_note_color(color):
-    b, g, r = color
-    return ((r < 100 and g < 200 and b > 150) # blue brick
-         or (r > 150 and g < 100 and b < 100) # red brick
-         or (r > 200 and g > 150 and b < 150)) # yellow brick
+def is_note_color_hsv(color):
+    h, s, v = color
+    return (
+        (-0.3 < h < 0.1 and s > 0.6 and v > 200) or # red brick
+        ( 0.8 < h < 1.2 and s > 0.3 and v > 220) or # yellow brick
+        ( 3.2 < h < 3.6 and s > 0.9 and v > 180) or # blue brick
+        ( s < 0.1 and v > 250)) # white brick
 
-def is_clear_color(color):
+def is_clear_color_hsv(color):
+    h, s, v = color
+    return 2.5 < h < 2.9 and s > 0.7 and v > 100
+
+def bgr2hsv(color):
     b, g, r = color
-    return r < 100 and g > 0 and b < 150
+    v = max(b, g, r)
+    m = min(b, g, r)
+    if v > 0:
+        s = (v - m) / v
+    else:
+        s = 0
+    if v == r:
+        h = (g - b) / (v - m)
+    elif v == g:
+        h = 2 + (b - r) / (v - m)
+    else:
+        h = 4 + (r - g) / (v - m)
+    return (h, s, v)
 
 class LegoPatternDetector(object):
     def __init__(self):
@@ -57,16 +75,16 @@ class LegoPatternDetector(object):
     def update_notes(self, img):
         for track in range(self.pattern.num_tracks):
             for step in range(self.pattern.num_steps):
-                color = average_cell_color(img, track, step)
-                if is_clear_color(color):
+                color = average_cell_color_hsv(img, track, step)
+                if is_clear_color_hsv(color):
                     self.pattern.clear_step(track, step)
-                elif is_note_color(color):
+                elif is_note_color_hsv(color):
                     self.pattern.set_step(track, step)
 
     def mute_tracks(self, img):
         for track in range(self.pattern.num_tracks):
-            color = average_cell_color(img, track + 8, 0)
-            if is_clear_color(color):
+            color = average_cell_color_hsv(img, track + 8, 0)
+            if is_clear_color_hsv(color):
                 self.pattern.unmute(track)
             else:
                 self.pattern.mute(track)
