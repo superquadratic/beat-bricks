@@ -42,8 +42,6 @@ class LegoPatternDetector(object):
     def __init__(self):
         self.homography = self.compute_homography()
         self.pattern = SharedPattern()
-        self.capture = cv2.VideoCapture(0)
-        cv2.namedWindow(WINDOW)
 
     def compute_homography(self):
         src_points = json.load(open('rect.json'))
@@ -56,8 +54,10 @@ class LegoPatternDetector(object):
             numpy.asarray(dst_points, float))[0]
 
     def process_image(self, img):
+        img = cv2.warpPerspective(img, self.homography, (GRID_SIZE, GRID_SIZE))
         self.update_notes(img)
         self.mute_tracks(img)
+        return img
 
     def update_notes(self, img):
         for track in range(self.pattern.num_tracks):
@@ -76,17 +76,16 @@ class LegoPatternDetector(object):
             else:
                 self.pattern.mute(track)
 
-    def run(self):
-        while True:
-            success, frame = self.capture.read()
-            if success:
-                warped = cv2.warpPerspective(frame, self.homography, (GRID_SIZE, GRID_SIZE))
-                cv2.imshow(WINDOW, warped)
-                self.process_image(warped)
-            if cv2.waitKey(100) != -1:
-                break
-
 
 if __name__ == '__main__':
+    capture = cv2.VideoCapture(0)
+    cv2.namedWindow(WINDOW)
     pattern_detector = LegoPatternDetector()
-    pattern_detector.run()
+
+    while True:
+        success, frame = capture.read()
+        if success:
+            img = pattern_detector.process_image(frame)
+            cv2.imshow(WINDOW, img)
+        if cv2.waitKey(1) == 27:
+            break
