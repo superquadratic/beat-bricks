@@ -1,6 +1,7 @@
 import liblo
 import numpy
 
+
 class Pattern(object):
     def __init__(self, tracks=8, steps=16):
         self.steps = numpy.zeros((steps, tracks), bool)
@@ -26,6 +27,7 @@ class Pattern(object):
     def unmute(self, track):
         self.muted[track] = False
 
+
 class SharedPattern(Pattern):
     def __init__(self, address=8765):
         Pattern.__init__(self)
@@ -50,6 +52,7 @@ class SharedPattern(Pattern):
         if self.muted[track]:
             liblo.send(self.target, '/pattern/unmute', track)
         Pattern.unmute(self, track)
+
 
 class PatternListener(liblo.ServerThread):
     def __init__(self, address=8765):

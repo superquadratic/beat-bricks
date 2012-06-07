@@ -4,6 +4,7 @@ import cv2
 
 WINDOW = 'hello'
 
+
 class Initializer(object):
     def __init__(self):
         self.rect = []

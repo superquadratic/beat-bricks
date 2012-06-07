@@ -9,31 +9,36 @@ WINDOW = 'beat it'
 CELL_SIZE = 16
 GRID_SIZE = 16 * CELL_SIZE
 
+
 def cell_start_end(id):
     start = id * CELL_SIZE + CELL_SIZE / 4
     end = start + CELL_SIZE / 2
     return start, end
 
+
 def average_cell_color_hsv(img, y, x):
     y_start, y_end = cell_start_end(y)
     x_start, x_end = cell_start_end(x)
     cell = img[
-      y_start : y_end,
-      x_start : x_end,
+      y_start:y_end,
+      x_start:x_end,
       :]
     return bgr2hsv(numpy.average(numpy.average(cell, axis=0), axis=0))
+
 
 def is_note_color_hsv(color):
     h, s, v = color
     return (
-        (-0.3 < h < 0.1 and s > 0.6 and v > 200) or # red brick
-        ( 0.8 < h < 1.2 and s > 0.3 and v > 220) or # yellow brick
-        ( 3.2 < h < 3.6 and s > 0.9 and v > 180) or # blue brick
-        ( s < 0.1 and v > 250)) # white brick
+        (-0.3 < h < 0.1 and s > 0.6 and v > 200) or  # red brick
+        (0.8 < h < 1.2 and s > 0.3 and v > 220) or   # yellow brick
+        (3.2 < h < 3.6 and s > 0.9 and v > 180) or   # blue brick
+        (s < 0.1 and v > 250))                       # white brick
+
 
 def is_clear_color_hsv(color):
     h, s, v = color
     return 2.5 < h < 2.9 and s > 0.7 and v > 100
+
 
 def bgr2hsv(color):
     b, g, r = color
@@ -51,6 +56,7 @@ def bgr2hsv(color):
         h = 4 + (r - g) / (v - m)
     return (h, s, v)
 
+
 class LegoPatternDetector(object):
     def __init__(self):
         self.homography = self.compute_homography()
@@ -58,10 +64,11 @@ class LegoPatternDetector(object):
 
     def compute_homography(self):
         src_points = json.load(open('rect.json'))
-        dst_points = [[        0,         0],
-                      [GRID_SIZE,         0],
-                      [GRID_SIZE, GRID_SIZE],
-                      [        0, GRID_SIZE]]
+        dst_points = [
+            [0, 0],
+            [GRID_SIZE, 0],
+            [GRID_SIZE, GRID_SIZE],
+            [0, GRID_SIZE]]
         return cv2.findHomography(
             numpy.asarray(src_points, float),
             numpy.asarray(dst_points, float))[0]
