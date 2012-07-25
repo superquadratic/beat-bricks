@@ -27,6 +27,15 @@ class Pattern(object):
     def unmute(self, track):
         self.muted[track] = False
 
+    def print_(self):
+        for track in range(self.num_tracks):
+            for step in range(self.num_steps):
+                if self.steps[step, track]:
+                    print '*',
+                else:
+                    print ' ',
+            print
+
 
 class SharedPattern(Pattern):
     def __init__(self, address=8765):
