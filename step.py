@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import numpy
 import pypm
 
 from pattern import Pattern, PatternListener
