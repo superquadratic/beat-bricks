@@ -22,9 +22,9 @@ def average_cell_color_hsv(img, y, x):
     y_start, y_end = cell_start_end(y)
     x_start, x_end = cell_start_end(x)
     cell = img[
-      y_start:y_end,
-      x_start:x_end,
-      :]
+        y_start:y_end,
+        x_start:x_end,
+        :]
     return bgr2hsv(numpy.average(numpy.average(cell, axis=0), axis=0))
 
 
