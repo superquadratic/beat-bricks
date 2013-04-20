@@ -18,9 +18,16 @@ class Camera(QtCore.QObject):
         self.timer.start()
 
     def grabImage(self):
-        success, frame = self.capture.read()
+        success, cv_image = self.capture.read()
         if success:
-            self.image.emit(frame)
+            self.image.emit(cv_image)
+
+
+def cv_image_to_qt_image(cv_image):
+    cv_image_rgb = cv2.cvtColor(cv_image, cv2.cv.CV_BGR2RGB)
+    height, width, channels = cv_image_rgb.shape
+    format = QtGui.QImage.Format_RGB888
+    return QtGui.QImage(cv_image_rgb.data, width, height, format)
 
 
 if __name__ == "__main__":
@@ -28,7 +35,6 @@ if __name__ == "__main__":
 
     # main window
     win = QtGui.QMainWindow()
-    win.resize(500, 500)
     win.setWindowTitle("Beat Bricks")
     win.show()
 
@@ -39,10 +45,18 @@ if __name__ == "__main__":
     layout = QtGui.QHBoxLayout()
     central_widget.setLayout(layout)
 
-    label = QtGui.QLabel("Hello")
+    # label to display the image
+    label = QtGui.QLabel()
     layout.addWidget(label)
 
-    # image capture
-    cam = Camera()
+    def show_image(cv_image):
+        qt_image = cv_image_to_qt_image(cv_image)
+        pixmap = QtGui.QPixmap.fromImage(qt_image)
+        label.setPixmap(pixmap)
 
+    # connect camera
+    cam = Camera()
+    cam.image.connect(show_image)
+
+    # start event loop
     sys.exit(app.exec_())
